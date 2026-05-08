@@ -134,7 +134,6 @@ encodeBlock opts (ShelleyBlock (Ledger.Block blkHeader txs) headerHash) =
           "size" .= encodeSingleton "bytes" (encodeWord32 (TPraos.bsize hBody))
         <>
           "transactions" .= encodeFoldable (encodeTx opts) (Sh.shelleyBlockBodyTxs txs)
-          -- Sh.abbTxs 
         )
   where
     TPraos.BHeader hBody _ = blkHeader
