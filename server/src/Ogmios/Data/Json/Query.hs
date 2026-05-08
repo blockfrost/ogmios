@@ -134,6 +134,9 @@ import Cardano.Ledger.Binary.Coders
     ( Decode (D, From, RecD)
     , (<!)
     )
+import Cardano.Ledger.Compactible
+    ( Compactible (fromCompact)
+    )
 import Cardano.Ledger.Conway.Genesis
     ( ConwayGenesis
     )
@@ -309,7 +312,7 @@ import qualified Cardano.Ledger.Hashes as Ledger
 import qualified Cardano.Ledger.Mary.Value as Ledger.Mary
 import qualified Cardano.Ledger.Plutus.Data as Ledger.Plutus
 import qualified Cardano.Ledger.Plutus.Language as Ledger.Plutus
-import qualified Cardano.Ledger.PoolParams as Ledger
+import qualified Cardano.Ledger.State as Ledger
 import qualified Cardano.Ledger.Shelley.Scripts as Ledger.Shelley
 import qualified Cardano.Ledger.State as Ledger
 import qualified Cardano.Ledger.TxIn as Ledger
@@ -498,35 +501,35 @@ type GenResult crypto f t =
     Proxy (QueryResult crypto t) -> f (QueryResult crypto t)
 
 type Delegations =
-    Map (Ledger.Credential 'Staking) (Ledger.KeyHash 'StakePool)
+    Map (Ledger.Credential Staking) (Ledger.KeyHash StakePool)
 
 type Deposits =
-    Map (Ledger.Credential 'Staking ) Coin
+    Map (Ledger.Credential Staking ) Coin
 
 type VoteDelegatees =
-    Map (Ledger.Credential 'Staking) Ledger.DRep
+    Map (Ledger.Credential Staking) Ledger.DRep
 
 type RewardAccounts =
-    Map (Ledger.Credential 'Staking) Coin
+    Map (Ledger.Credential Staking) Coin
 
 type RewardAccountSummaries =
-    Map (Ledger.Credential 'Staking) RewardAccountSummary
+    Map (Ledger.Credential Staking) RewardAccountSummary
 
 type StakePoolsPerformances =
     ( Sh.Api.RewardParams
-    , Map (Ledger.KeyHash 'StakePool) Sh.Api.RewardInfoPool
+    , Map (Ledger.KeyHash StakePool) Sh.Api.RewardInfoPool
     )
 
 data RewardAccountSummary = RewardAccountSummary
-    { poolDelegate :: !(StrictMaybe (Ledger.KeyHash 'StakePool))
+    { poolDelegate :: !(StrictMaybe (Ledger.KeyHash StakePool))
     , drepDelegate :: !(StrictMaybe Ledger.DRep)
     , rewards :: !Coin
     , deposit :: !Coin
     } deriving (Eq, Show, Generic)
 
 data DRepSummary
-    = AlwaysAbstain Coin (Set (Ledger.Credential 'Staking))
-    | AlwaysNoConfidence Coin (Set (Ledger.Credential 'Staking))
+    = AlwaysAbstain Coin (Set (Ledger.Credential Staking))
+    | AlwaysNoConfidence Coin (Set (Ledger.Credential Staking))
     | Registered Coin Ledger.DRepState
     deriving (Eq, Show, Generic)
 
@@ -535,13 +538,13 @@ data DRepSummary
 --
 
 encodeAccountState
-    :: AccountState
+    :: Ledger.ChainAccountState
     -> Json
 encodeAccountState st =
     "treasury" .=
-        encodeCoin (asTreasury st) <>
+        encodeCoin (Ledger.casTreasury st) <>
     "reserves" .=
-        encodeCoin (asReserves st)
+        encodeCoin (Ledger.casReserves st)
     & encodeObject
 
 encodeBound
@@ -698,7 +701,7 @@ encodePoolDistr =
         & encodeObject
 
 encodeRewardInfoPool
-    :: Ledger.KeyHash 'StakePool
+    :: Ledger.KeyHash StakePool
     -> Sh.Api.RewardInfoPool
     -> Json
 encodeRewardInfoPool poolId info =
@@ -815,8 +818,8 @@ deserialisePartialNewEpochState (Serialised bytes) =
     decodePartialLedgerState
         :: forall s. ()
         => StateT
-            ( Binary.Interns (Ledger.Credential 'Staking)
-            , Binary.Interns (Ledger.KeyHash 'StakePool)
+            ( Binary.Interns (Ledger.Credential Staking)
+            , Binary.Interns (Ledger.KeyHash StakePool)
             , Binary.Interns (Ledger.Credential DRepRole)
             , Binary.Interns (Ledger.Credential HotCommitteeRole)
             )
@@ -847,7 +850,7 @@ encodeSafeZone = \case
         encodeNull
 
 encodeStakePools
-    :: Map (Ledger.KeyHash 'StakePool) (Maybe Ledger.PoolParams, StrictMaybe Coin)
+    :: Map (Ledger.KeyHash StakePool) (Maybe Ledger.StakePoolParams, StrictMaybe Coin)
     -> Json
 encodeStakePools =
     encodeObject . encodeMapSeries Shelley.stringifyPoolId (\k (params, stake) ->
@@ -980,7 +983,7 @@ parseQueryLedgerDelegateRepresentatives genResult =
         . Map.alter (<|> Just (AlwaysNoConfidence mempty Set.empty)) Ledger.DRepAlwaysNoConfidence
 
     mergeAll
-        :: Map Ledger.DRep (Set (Ledger.Credential 'Staking))
+        :: Map Ledger.DRep (Set (Ledger.Credential Staking))
         -> Map Ledger.DRep Ledger.DRepState
         -> Map Ledger.DRep Coin
         -> Map Ledger.DRep DRepSummary
@@ -1041,7 +1044,7 @@ parseQueryLedgerDelegateRepresentatives genResult =
               "mandate" .=
                 (encodeSingleton "epoch" . encodeEpochNo) (Ledger.drepExpiry summary)
            <> "deposit" .=
-                encodeCoin (Ledger.drepDeposit summary)
+                (encodeCoin . fromCompact) (Ledger.drepDeposit summary)
            <> "stake" .=
                 encodeCoin stake
            <> "metadata" .=? OmitWhenNothing
@@ -1164,8 +1167,8 @@ parseQueryLedgerTip genResultInEraTPraos genResultInEraPraos =
                     (genResultInEraPraos (Proxy @ConwayEra))
 
 parseQueryLedgerTreasuryAndReserves
-    :: forall crypto f. ()
-    => GenResult crypto f AccountState
+    :: forall crypto era f. ()
+    => GenResult crypto f (Ledger.ChainAccountState)
     -> Json.Value
     -> Json.Parser (QueryInEra f (CardanoBlock crypto))
 parseQueryLedgerTreasuryAndReserves genResult =
@@ -1955,8 +1958,8 @@ parseQueryLedgerRewardsProvenance genResult =
 
 parseQueryLedgerStakePools
     :: forall crypto f. ()
-    => GenResult crypto f (Map (Ledger.KeyHash 'StakePool) Ledger.PoolParams)
-    -> GenResult crypto f (Map (Ledger.KeyHash 'StakePool) (Maybe Ledger.PoolParams, StrictMaybe Coin))
+    => GenResult crypto f (Map (Ledger.KeyHash StakePool) Ledger.StakePoolParams)
+    -> GenResult crypto f (Map (Ledger.KeyHash StakePool) (Maybe Ledger.StakePoolParams, StrictMaybe Coin))
     -> Json.Value
     -> Json.Parser (QueryInEra f (CardanoBlock crypto))
 parseQueryLedgerStakePools genResultNoStake genResult =
@@ -1971,9 +1974,9 @@ parseQueryLedgerStakePools genResultNoStake genResult =
     encodeStakePoolsWithoutStake = encodeStakePools . Map.map (\params -> (Just params,SNothing))
 
     mergeDistrAndParams
-        :: Map (Ledger.KeyHash 'StakePool) Coin
-        -> Map (Ledger.KeyHash 'StakePool) Ledger.PoolParams
-        -> Map (Ledger.KeyHash 'StakePool) (Maybe Ledger.PoolParams, StrictMaybe Coin)
+        :: Map (Ledger.KeyHash StakePool) Coin
+        -> Map (Ledger.KeyHash StakePool) Ledger.StakePoolParams
+        -> Map (Ledger.KeyHash StakePool) (Maybe Ledger.StakePoolParams, StrictMaybe Coin)
     mergeDistrAndParams =
         Map.merge
            (Map.mapMissing $ \_ distr -> (Nothing, SJust distr))
@@ -2209,9 +2212,9 @@ decodeCoin = Json.withObject "Lovelace" $ \o -> do
     pure $ Ledger.word64ToCoin lovelace
 
 decodeStakingCredential
-    :: (ByteString -> Json.Parser (Ledger.Credential 'Staking))
+    :: (ByteString -> Json.Parser (Ledger.Credential Staking))
     -> Json.Value
-    -> Json.Parser (Ledger.Credential 'Staking)
+    -> Json.Parser (Ledger.Credential Staking)
 decodeStakingCredential decodeAsKeyOrScript =
     Json.withText "StakingCredential" $ \(encodeUtf8 -> str) -> asum
         [ decodeBase16 str >>=
@@ -2234,7 +2237,7 @@ decodeStakingCredential decodeAsKeyOrScript =
   where
     decodeAsStakeAddress
         :: ByteString
-        -> Json.Parser (Ledger.Credential 'Staking)
+        -> Json.Parser (Ledger.Credential Staking)
     decodeAsStakeAddress =
         fmap Ledger.raCredential
             . maybe invalidStakeAddress pure
@@ -2244,9 +2247,9 @@ decodeStakingCredential decodeAsKeyOrScript =
             fail "invalid stake address"
 
 decodeDRepCredential
-    :: (ByteString -> Json.Parser (Ledger.Credential 'DRepRole))
+    :: (ByteString -> Json.Parser (Ledger.Credential DRepRole))
     -> Json.Value
-    -> Json.Parser (Ledger.Credential 'DRepRole)
+    -> Json.Parser (Ledger.Credential DRepRole)
 decodeDRepCredential decodeAsKeyOrScript =
     Json.withText "DRepCredential" $ \(encodeUtf8 -> str) -> asum
         [ decodeBase16 str >>=
@@ -2350,7 +2353,7 @@ decodePolicyId =
 
 decodePoolId
     :: Json.Value
-    -> Json.Parser (Ledger.KeyHash 'StakePool)
+    -> Json.Parser (Ledger.KeyHash StakePool)
 decodePoolId = Json.withObject "StakePoolId" $ \obj -> do
     txt <- obj .: "id"
     poolIdFromBytes fromBech32 txt <|> poolIdFromBytes fromBase16 txt
@@ -2400,11 +2403,11 @@ decodeScript v =
                     (Just bytes, _) -> do
                         case decodeCborAnn @era "Script<Native>" Binary.decCBOR (toLazy bytes) of
                             Right script ->
-                                pure (Ledger.Alonzo.TimelockScript script)
+                                pure (Ledger.Alonzo.NativeScript script)
                             Left (_ :: Text) ->
                                 fail "couldn't decode native script"
                     (_, Just script) ->
-                        Ledger.Alonzo.TimelockScript <$> decodeTimeLock script
+                        Ledger.Alonzo.NativeScript <$> decodeTimeLock script
                     (_, _) ->
                         fail "missing field 'cbor' or 'json' to decode native script"
             Just lang@"plutus:v1" -> do
