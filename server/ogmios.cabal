@@ -193,9 +193,9 @@ library
     , ouroboros-consensus
     , ouroboros-consensus:cardano
     , ouroboros-consensus:protocol
+    , ouroboros-network-ogmios
     , ouroboros-network:api
     , ouroboros-network:framework
-    , ouroboros-network-ogmios
     , ouroboros-network:protocols
     , plutus-core
     , plutus-ledger-api
@@ -374,8 +374,8 @@ test-suite unit
     , ouroboros-consensus
     , ouroboros-consensus:cardano
     , ouroboros-consensus:unstable-cardano-testlib
-    , ouroboros-network:api
     , ouroboros-network-ogmios
+    , ouroboros-network:api
     , ouroboros-network:protocols
     , random
     , strict-sop-core
