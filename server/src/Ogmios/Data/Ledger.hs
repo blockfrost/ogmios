@@ -17,7 +17,7 @@ import Ogmios.Prelude
 
 import Cardano.Ledger.Address
     ( Addr (..)
-    , RewardAccount (..)
+    , AccountAddress (..)
     )
 import Cardano.Ledger.Alonzo.Plutus.Context
     ( ContextError
@@ -45,8 +45,8 @@ import qualified Prelude
 
 data DiscriminatedEntities
     = DiscriminatedAddresses (Set Addr)
-    | DiscriminatedRewardAccounts (Set RewardAccount)
-    | DiscriminatedPoolRegistrationCertificate (KeyHash 'StakePool)
+    | DiscriminatedRewardAccounts (Set AccountAddress)
+    | DiscriminatedPoolRegistrationCertificate (KeyHash StakePool)
     | DiscriminatedTransaction
     deriving (Show, Ord, Eq)
 
