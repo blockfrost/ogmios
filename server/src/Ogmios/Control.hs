@@ -47,6 +47,7 @@ import Ouroboros.Consensus.Util.IOLike
     )
 
 import qualified Control.Monad.Class.MonadSTM.Internal
+import Control.Monad.Class.MonadThrow (MonadEvaluate)
 
 import qualified Control.Concurrent.Async as Async
 import qualified Control.Concurrent.STM.TArray as STM
@@ -71,6 +72,7 @@ newtype App a = App
         ( Functor, Applicative, Monad
         , PrimMonad
         , MonadIO
+        , MonadEvaluate
         , MonadReader (Env App)
         , MonadLog, MonadMetrics
         , MonadWebSocket

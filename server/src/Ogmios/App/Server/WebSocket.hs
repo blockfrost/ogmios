@@ -170,6 +170,7 @@ import System.TimeManager
     ( TimeoutThread (..)
     )
 
+import Control.Monad.Class.MonadThrow (MonadEvaluate)
 import qualified Codec.Json.Rpc as Rpc
 import qualified Codec.Json.Rpc.Handler as Rpc
 import qualified Data.Aeson as Json
@@ -182,6 +183,7 @@ newWebSocketApp
     :: forall m env.
         ( MonadIO m -- Needed by 'connectClient' & for reading genesis configurations
         , MonadClock m
+        , MonadEvaluate m
         , MonadLink m
         , MonadMetrics m
         , MonadOuroboros m

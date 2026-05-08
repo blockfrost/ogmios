@@ -312,7 +312,6 @@ newExecutionUnitsEvaluator
         , MonadClock m
         , block ~ HardForkBlock (CardanoEras crypto)
         , crypto ~ StandardCrypto
-        , CanEvaluateScriptsInEra BabbageEra
         , CanEvaluateScriptsInEra ConwayEra
         , CanEvaluateScriptsInEra DijkstraEra
         , ConvertRawTxId (GenTx (CardanoBlock crypto))
@@ -362,7 +361,9 @@ newExecutionUnitsEvaluator tr = do
 
                 (UTxOInConwayEra utxo, GenTxBabbage (ShelleyTx _id tx)) -> do
                     logWith tr $ TxSubmissionEvaluateArguments { utxoEra = "conway", transactionEra = "babbage" }
-                    return $ Right (SomeEvaluationInAnyEra utxo (upgrade tx))
+                    -- return $ Right (SomeEvaluationInAnyEra utxo (upgrade tx))
+                    -- XXX: srk upgrade please
+                    undefined
 
                 (UTxOInConwayEra utxo, GenTxConway (ShelleyTx _id tx)) -> do
                     logWith tr $ TxSubmissionEvaluateArguments { utxoEra = "conway", transactionEra = "conway" }
@@ -464,9 +465,9 @@ newExecutionUnitsEvaluator tr = do
                         pure $ LSQ.SendMsgRelease clientStIdle
                     )
                     -- Babbage
-                    (clientStAcquired0 @_ @BabbageEra args evaluateExecutionUnits)
-                    -- Conway
                     (clientStAcquired0 @_ @ConwayEra args evaluateExecutionUnits)
+                    -- Conway
+                    (clientStAcquired0 @_ @DijkstraEra args evaluateExecutionUnits)
                 , LSQ.recvMsgFailure =
                     const $ pure $ LSQ.SendMsgAcquire VolatileTip (clientStAcquiring args)
                 }
@@ -574,25 +575,26 @@ selectEra
        )
 
     -- Selector for the Babbage era.
-    -> ( HoistQuery Praos BabbageEra -> LSQ.ClientStAcquired block (Point block) (Query block) m ()
-       )
-
-    -- Selector for the Babbage era.
     -> ( HoistQuery Praos ConwayEra -> LSQ.ClientStAcquired block (Point block) (Query block) m ()
        )
 
+    -- Selector for the Babbage era.
+    -> ( HoistQuery Praos DijkstraEra -> LSQ.ClientStAcquired block (Point block) (Query block) m ()
+       )
+
     -> LSQ.ClientStAcquired block (Point block) (Query block) m ()
-selectEra fallback asBabbage asConway =
+selectEra fallback asConway asDijkstra =
     LSQ.SendMsgQuery (Ledger.BlockQuery $ HF.QueryHardFork HF.GetCurrentEra) $
     LSQ.ClientStQuerying
         { LSQ.recvMsgResult = \case
-            EraIndex                   Z{}       -> fallback "Byron"
-            EraIndex                (S Z{})      -> fallback "Shelley"
-            EraIndex             (S (S Z{}))     -> fallback "Allegra"
-            EraIndex          (S (S (S Z{})))    -> fallback "Mary"
-            EraIndex       (S (S (S (S Z{}))))   -> fallback "Alonzo"
-            EraIndex    (S (S (S (S (S Z{})))))  -> pure (asBabbage QueryIfCurrentBabbage)
-            EraIndex (S (S (S (S (S (S Z{})))))) -> pure (asConway QueryIfCurrentConway)
+            EraIndex                      Z{}        -> fallback "Byron"
+            EraIndex                   (S Z{})       -> fallback "Shelley"
+            EraIndex                (S (S Z{}))      -> fallback "Allegra"
+            EraIndex             (S (S (S Z{})))     -> fallback "Mary"
+            EraIndex          (S (S (S (S Z{}))))    -> fallback "Alonzo"
+            EraIndex       (S (S (S (S (S Z{})))))   -> fallback "Babbage"
+            EraIndex    (S (S (S (S (S (S Z{}))))))  -> pure (asConway QueryIfCurrentConway)
+            EraIndex (S (S (S (S (S (S (S Z{}))))))) -> pure (asDijkstra QueryIfCurrentDijkstra)
         }
 
 --
@@ -694,14 +696,16 @@ translateToNetworkEra (SomeEvaluationInAnyEra utxoOrig txOrig) =
                     _ ->
                         Nothing
 
-            babbageToConway =
+            conwayToDijkstra =
                 case (testEquality eraNetwork eraDijkstra, testEquality eraArgs eraConway) of
                     (Just Refl, Just Refl) -> do
-                        Just (upgrade utxo, upgrade tx)
+                        -- XXX: srk upgrade please
+                        -- Just (upgrade utxo, upgrade tx)
+                        Just undefined
                     _ ->
                         Nothing
           in
-            sameEra <|> babbageToConway
+            sameEra <|> conwayToDijkstra
 
 --
 -- Logs

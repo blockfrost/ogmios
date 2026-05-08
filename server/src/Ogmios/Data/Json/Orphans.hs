@@ -50,6 +50,11 @@ import Ouroboros.Network.Block
 
 import qualified Cardano.Protocol.TPraos.API as TPraos
 import qualified Data.Aeson as Json
+import qualified Data.Base16.Types as Base16
+import qualified Data.ByteString.Base16 as Base16
+import qualified Data.ByteString.Short as SBS
+import qualified Data.Text.Encoding as Text
+import           Ouroboros.Consensus.HardFork.Combinator (OneEraHash (..))
 
 --
 -- ToJSON
@@ -99,6 +104,17 @@ instance FromJSON (MultiEraUTxO (CardanoBlock crypto)) where
 instance FromJSON (Tip (CardanoBlock crypto)) where
     parseJSON = decodeTip
 
+instance ToJSON (OneEraHash xs) where
+  toJSON = Json.toJSON
+         . Text.decodeLatin1
+         . Base16.extractBase16
+         . Base16.encodeBase16'
+         . SBS.fromShort
+         . getOneEraHash
+
+instance FromJSON (OneEraHash xs) where
+  -- XXX: srk upgrade
+  parseJSON = undefined
 --
 -- Monoid / Semigroup
 --
