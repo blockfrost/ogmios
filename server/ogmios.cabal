@@ -152,6 +152,7 @@ library
     , cardano-crypto-wrapper
     , cardano-data
     , cardano-diffusion
+    , cardano-diffusion:api
     , cardano-ledger-allegra
     , cardano-ledger-alonzo
     , cardano-ledger-api

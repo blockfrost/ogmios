@@ -157,7 +157,7 @@ import Ogmios.Data.Protocol.TxSubmission
     , TxSubmissionMessage (..)
     , mkTxSubmissionCodecs
     )
-import Ouroboros.Network.NodeToClient.Version
+import Cardano.Network.NodeToClient.Version
     ( NodeToClientVersionData (NodeToClientVersionData)
     )
 import Ouroboros.Network.Protocol.ChainSync.ClientPipelined
