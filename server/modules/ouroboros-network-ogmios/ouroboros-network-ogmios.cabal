@@ -84,13 +84,13 @@ library
     , cborg
     , containers
     , contra-tracer
+    , deepseq
     , io-classes
     , iohk-monitoring
     , network-mux
     , ouroboros-consensus
     , ouroboros-consensus:cardano
     , ouroboros-consensus:diffusion
-    , ouroboros-network
     , ouroboros-network:api
     , ouroboros-network:protocols
     , ouroboros-network:framework

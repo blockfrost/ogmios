@@ -66,6 +66,7 @@ import Cardano.Network.Protocol.NodeToClient.Trace
 import Cardano.Slotting.Slot
     ( SlotNo
     )
+import Control.DeepSeq (NFData)
 import Control.Monad.Class.MonadAsync
     ( MonadAsync
     )
@@ -74,6 +75,7 @@ import Control.Monad.Class.MonadST
     )
 import Control.Monad.Class.MonadThrow
     ( MonadMask
+    , MonadEvaluate
     , MonadThrow (..)
     )
 import Control.Monad.IO.Class
@@ -257,6 +259,7 @@ instance ConvertRawTxId (GenTx (CardanoBlock StandardCrypto)) where
         GenTxIdAlonzo x -> toRawTxIdHash x
         GenTxIdBabbage x -> toRawTxIdHash x
         GenTxIdConway x -> toRawTxIdHash x
+        GenTxIdDijkstra x -> toRawTxIdHash x
 
 -- | A handy type to pass clients around
 data Clients m block = Clients
@@ -303,6 +306,7 @@ nodeToClientV_Min = NodeToClientV_17
 mkClient
     :: forall m.
         ( MonadAsync m
+        , MonadEvaluate m
         , MonadIO m
         , MonadMask m
         , MonadST m
@@ -368,6 +372,7 @@ localChainSync
         ( protocol ~ ChainSync Block (Point Block) (Tip Block)
         , MonadThrow m
         , MonadAsync m
+        , MonadEvaluate m
         )
     => (forall a. m a -> IO a)
         -- ^ A natural transformation to unlift a particular 'm' into 'IO'.
@@ -389,6 +394,7 @@ localChainSync unliftIO tr codec client channel =
 localTxSubmission
     :: forall m protocol.
         ( protocol ~ LocalTxSubmission (SerializedTransaction Block) (SubmitTransactionError Block)
+        , MonadEvaluate m
         , MonadThrow m
         )
     => (forall a. m a -> IO a)
@@ -411,7 +417,9 @@ localTxSubmission unliftIO tr codec client channel =
 localTxMonitor
     :: forall m protocol a.
         ( protocol ~ LocalTxMonitor (GenTxId Block) (GenTx Block) SlotNo
+        , MonadEvaluate m
         , MonadThrow m
+        , NFData a
         )
     => (forall x. m x -> IO x)
         -- ^ A natural transformation to unlift a particular 'm' into 'IO'.
@@ -433,6 +441,7 @@ localTxMonitor unliftIO tr codec client channel =
 localStateQuery
     :: forall m.
         ( MonadAsync m
+        , MonadEvaluate m
         , MonadMask m
         )
     => (forall x. m x -> IO x)
