@@ -21,6 +21,9 @@ import Cardano.Ledger.BaseTypes
 import Cardano.Ledger.Binary
     ( sizedValue
     )
+import Cardano.Ledger.Compactible
+    ( Compactible (fromCompact)
+    )
 import Cardano.Ledger.Conway.PParams
     ( THKD (..)
     )
@@ -50,8 +53,8 @@ import qualified Cardano.Ledger.HKD as Ledger
 
 import qualified Cardano.Ledger.Shelley.PParams as Sh
 
+import qualified Cardano.Ledger.Alonzo.BlockBody as Al
 import qualified Cardano.Ledger.Alonzo.PParams as Al
-import qualified Cardano.Ledger.Alonzo.TxSeq as Al
 
 import qualified Cardano.Ledger.Babbage.Core as Ba
 import qualified Cardano.Ledger.Babbage.Tx as Ba
@@ -102,7 +105,7 @@ encodeBlock opts (ShelleyBlock (Ledger.Block blkHeader txs) headerHash) =
         <>
           Babbage.encodeHeader blkHeader
         <>
-          "transactions" .= encodeFoldable (encodeTx opts) (Al.txSeqTxns txs)
+          "transactions" .= encodeFoldable (encodeTx opts) (Al.alonzoBlockBodyTxs txs)
         )
 
 encodeCommittee
@@ -126,7 +129,7 @@ encodeCommitteeMembersState x = encodeObject
     )
 
 encodeConstitutionalCommitteeMemberState
-    :: Ledger.Credential 'ColdCommitteeRole
+    :: Ledger.Credential ColdCommitteeRole
     -> Cn.CommitteeMemberState
     -> Json
 encodeConstitutionalCommitteeMemberState memberId st = encodeObject
@@ -247,10 +250,10 @@ encodeConstitution x =
     "guardrails" .=
         encodeStrictMaybe
             (\s -> encodeObject ("hash" .= Shelley.encodeScriptHash s))
-            (Cn.constitutionScript x)
+            (x ^. Cn.constitutionScriptL)
 
 encodeConstitutionalCommitteeMember
-    :: Ledger.Credential 'ColdCommitteeRole
+    :: Ledger.Credential ColdCommitteeRole
     -> StrictMaybe EpochNo
     -> Json
 encodeConstitutionalCommitteeMember memberId mandate =
@@ -572,9 +575,9 @@ encodePParamsHKD encode pure_ x =
     encode "maxReferenceScriptsSize"
         (encodeSingleton "bytes" . encodeWord32) (pure_ @Word32 204800) <> -- NOTE: Hard-coded in Conway.
     encode "stakeCredentialDeposit"
-        encodeCoin (unTHKD (Cn.cppKeyDeposit x)) <>
+        (encodeCoin . fromCompact) (unTHKD (Cn.cppKeyDeposit x)) <>
     encode "stakePoolDeposit"
-        encodeCoin (unTHKD (Cn.cppPoolDeposit x)) <>
+        (encodeCoin . fromCompact) (unTHKD (Cn.cppPoolDeposit x)) <>
     encode "stakePoolRetirementEpochBound"
         encodeEpochInterval (unTHKD (Cn.cppEMax x)) <>
     encode "desiredNumberOfStakePools"
@@ -586,11 +589,11 @@ encodePParamsHKD encode pure_ x =
     encode "treasuryExpansion"
         encodeUnitInterval (unTHKD (Cn.cppTau x)) <>
     encode "minStakePoolCost"
-        encodeCoin (unTHKD (Cn.cppMinPoolCost x)) <>
+        (encodeCoin . fromCompact) (unTHKD (Cn.cppMinPoolCost x)) <>
     encode "minUtxoDepositConstant"
         encodeCoin (pure_ (Coin 0)) <>
     encode "minUtxoDepositCoefficient"
-        (encodeInteger . unCoin . Ba.unCoinPerByte) (unTHKD (Cn.cppCoinsPerUTxOByte x)) <>
+        (encodeInteger . unCoin . fromCompact . Ba.unCoinPerByte) (unTHKD (Cn.cppCoinsPerUTxOByte x)) <>
     encode "plutusCostModels"
         Alonzo.encodeCostModels (unTHKD (Cn.cppCostModels x)) <>
     encode "scriptExecutionPrices"
@@ -618,9 +621,9 @@ encodePParamsHKD encode pure_ x =
     encode "governanceActionLifetime"
         encodeEpochInterval (unTHKD (Cn.cppGovActionLifetime x)) <>
     encode "governanceActionDeposit"
-        encodeCoin (unTHKD (Cn.cppGovActionDeposit x)) <>
+        (encodeCoin . fromCompact) (unTHKD (Cn.cppGovActionDeposit x)) <>
     encode "delegateRepresentativeDeposit"
-        encodeCoin (unTHKD (Cn.cppDRepDeposit x)) <>
+        (encodeCoin . fromCompact) (unTHKD (Cn.cppDRepDeposit x)) <>
     encode "delegateRepresentativeMaxIdleTime"
         encodeEpochInterval (unTHKD (Cn.cppDRepActivity x))
     & encodeObject
@@ -734,19 +737,19 @@ encodeScriptPurposeItem = encodeObject . \case
 
 encodeTx
     :: (MetadataFormat, IncludeCbor)
-    -> Ba.AlonzoTx ConwayEra
+    -> Ba.Tx Ledger.TopTx ConwayEra
     -> Json
 encodeTx (fmt, opts) x =
     encodeObject
-        ( Shelley.encodeTxId (Ledger.txIdTxBody @ConwayEra (Cn.body x))
+        ( Shelley.encodeTxId (Ledger.txIdTxBody @ConwayEra (txBody x))
        <>
-        "spends" .= Alonzo.encodeIsValid (Cn.isValid x)
+        "spends" .= Alonzo.encodeIsValid (x ^. Ledger.isValidTxL)
        <>
-        encodeTxBody opts (Cn.body x) (strictMaybe mempty (Map.keys . snd) auxiliary)
+        encodeTxBody opts (txBody x) (strictMaybe mempty (Map.keys . snd) auxiliary)
        <>
         "metadata" .=? OmitWhenNothing fst auxiliary
        <>
-        Alonzo.encodeWitnessSet opts (snd <$> auxiliary) encodeScriptPurposeIndex (Cn.wits x)
+        Alonzo.encodeWitnessSet opts (snd <$> auxiliary) encodeScriptPurposeIndex (x ^. Ledger.witsTxL)
        <>
         if includeTransactionCbor opts then
            "cbor" .= encodeByteStringBase16 (encodeCbor @ConwayEra x)
@@ -754,9 +757,10 @@ encodeTx (fmt, opts) x =
            mempty
         )
   where
+    txBody tx = tx ^. Ledger.bodyTxL
     auxiliary = do
-        hash <- Shelley.encodeAuxiliaryDataHash <$> Cn.ctbAdHash (Cn.body x)
-        (labels, scripts) <- Alonzo.encodeAuxiliaryData (fmt, opts) <$> Ba.auxiliaryData x
+        hash <- Shelley.encodeAuxiliaryDataHash <$> Cn.ctbAdHash (txBody x)
+        (labels, scripts) <- Alonzo.encodeAuxiliaryData (fmt, opts) <$> (x ^. Ledger.auxDataTxL)
         pure
             ( encodeObject ("hash" .= hash <> "labels" .= labels)
             , scripts
@@ -764,7 +768,7 @@ encodeTx (fmt, opts) x =
 
 encodeTxBody
     :: IncludeCbor
-    -> Cn.ConwayTxBody ConwayEra
+    -> Cn.TxBody Ledger.TopTx ConwayEra
     -> [Ledger.ScriptHash]
     -> Series
 encodeTxBody opts x scripts =
