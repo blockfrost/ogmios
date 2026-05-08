@@ -185,6 +185,7 @@ library
     , json-rpc
     , lens-aeson
     , memory
+    , mempack
     , mtl
     , optparse-applicative
     , ouroboros-consensus
