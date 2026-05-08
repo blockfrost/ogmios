@@ -200,7 +200,9 @@ readAlonzoGenesis configFile = do
                 Ledger.PlutusV1
                 (Ledger.costModelsValid costModels)
          in
-            Ledger.AlonzoGenesisWrapper (inner { Ledger.uappCostModels = Ledger.mkCostModels costModelsPruned })
+            Ledger.AlonzoGenesisWrapper (inner { Ledger.uuappPlutusV1CostModel = Ledger.mkCostModels costModelsPruned })
+      --}
+      config
 
 
 readConwayGenesis :: MonadIO m => FilePath -> m (Either Text (GenesisConfig ConwayEra))
