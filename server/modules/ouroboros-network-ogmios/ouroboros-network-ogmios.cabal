@@ -78,6 +78,7 @@ library
       aeson
     , base >=4.7 && <5
     , bytestring
+    , cardano-diffusion
     , cardano-ledger-byron
     , cardano-slotting
     , cborg
@@ -92,6 +93,7 @@ library
     , ouroboros-network
     , ouroboros-network:api
     , ouroboros-network:protocols
+    , ouroboros-network:framework
     , typed-protocols
     , typed-protocols:cborg
     , typed-protocols:stateful

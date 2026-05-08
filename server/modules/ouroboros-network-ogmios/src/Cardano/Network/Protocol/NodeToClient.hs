@@ -102,6 +102,7 @@ import Data.Void
 import Network.Mux
     ( Error (..)
     , Mode (..)
+    , nullTracers
     )
 import Network.TypedProtocol.Codec
     ( Codec
@@ -163,7 +164,7 @@ import Ouroboros.Network.Mux
     , OuroborosApplication (..)
     , RunMiniProtocol (..)
     )
-import Ouroboros.Network.NodeToClient
+import Cardano.Network.NodeToClient
     ( LocalAddress
     , MinimalInitiatorContext
     , NetworkConnectTracers (..)
@@ -288,7 +289,7 @@ connectClient tr client vData addr = liftIO $ withIOManager $ \iocp -> do
 
     tracers :: NetworkConnectTracers LocalAddress NodeToClientVersion
     tracers = NetworkConnectTracers
-        { nctMuxTracer = nullTracer
+        { nctMuxTracers = nullTracers
         , nctHandshakeTracer = contramap TrHandshake tr
         }
 
