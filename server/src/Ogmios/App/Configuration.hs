@@ -187,9 +187,11 @@ readAlonzoGenesis configFile = do
 
     withoutFutureParameters :: Set Text -> GenesisConfig AlonzoEra -> GenesisConfig AlonzoEra
     withoutFutureParameters sourceParamNames config =
+    -- XXX: srk, no-op for now
+    {--
         let
             inner = Ledger.unAlonzoGenesisWrapper config
-            costModels = Ledger.uappCostModels inner
+            costModels = Ledger.uappPlutusV1CostModel inner
             costModelsPruned = Map.adjust
                 (either (error . show) identity
                     . Ledger.mkCostModel Ledger.PlutusV1
