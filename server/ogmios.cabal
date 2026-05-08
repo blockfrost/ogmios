@@ -188,13 +188,12 @@ library
     , mtl
     , optparse-applicative
     , ouroboros-consensus
-    , ouroboros-consensus-cardano
-    , ouroboros-consensus-protocol
+    , ouroboros-consensus:cardano
+    , ouroboros-consensus:protocol
     , ouroboros-network
-    , ouroboros-network-api
-    , ouroboros-network-framework
+    , ouroboros-network:api
     , ouroboros-network-ogmios
-    , ouroboros-network-protocols
+    , ouroboros-network:protocols
     , plutus-core
     , plutus-ledger-api
     , prettyprinter
@@ -370,12 +369,11 @@ test-suite unit
     , lens-aeson
     , ogmios
     , ouroboros-consensus
-    , ouroboros-consensus-cardano
-    , ouroboros-consensus-cardano:unstable-cardano-testlib
-    , ouroboros-network-api
-    , ouroboros-network-framework
+    , ouroboros-consensus:cardano
+    , ouroboros-consensus:unstable-cardano-testlib
+    , ouroboros-network:api
     , ouroboros-network-ogmios
-    , ouroboros-network-protocols
+    , ouroboros-network:protocols
     , random
     , strict-sop-core
     , template-haskell
