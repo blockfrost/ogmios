@@ -6,6 +6,13 @@ module Ogmios.Data.Ledger.PredicateFailure.Allegra where
 
 import Ogmios.Prelude
 
+import Data.Map.NonEmpty
+    ( toMap
+    )
+import Data.Set.NonEmpty
+    ( toSet
+    )
+
 import Ogmios.Data.Ledger.PredicateFailure
     ( DiscriminatedEntities (..)
     , MultiEraPredicateFailure (..)
@@ -41,14 +48,17 @@ encodeUtxoFailure
     -> MultiEraPredicateFailure
 encodeUtxoFailure era = \case
     Al.BadInputsUTxO inputs ->
-        UnknownUtxoReference inputs
+        UnknownUtxoReference (toSet inputs)
     Al.OutsideValidityIntervalUTxO validityInterval currentSlot ->
         TransactionOutsideValidityInterval { validityInterval, currentSlot }
     Al.OutputTooBigUTxO outs ->
         let culpritOutputs = (\out -> TxOutInAnyEra (era, out)) <$> outs in
-        ValueSizeAboveLimit culpritOutputs
+        ValueSizeAboveLimit (toList culpritOutputs)
     Al.MaxTxSizeUTxO (Mismatch measuredSize maximumSize) ->
-        TransactionTooLarge { measuredSize, maximumSize }
+        TransactionTooLarge
+          { measuredSize = fromIntegral measuredSize
+          , maximumSize = fromIntegral maximumSize
+          }
     Al.InputSetEmptyUTxO ->
         EmptyInputSet
     Al.FeeTooSmallUTxO (Mismatch suppliedFee minimumRequiredFee) ->
@@ -58,19 +68,20 @@ encodeUtxoFailure era = \case
         let valueProduced = ValueInAnyEra (era, produced) in
         ValueNotConserved { valueConsumed, valueProduced }
     Al.WrongNetwork expectedNetwork invalidAddrs ->
-        let invalidEntities = DiscriminatedAddresses invalidAddrs in
+        let invalidEntities = DiscriminatedAddresses (toSet invalidAddrs) in
         NetworkMismatch { expectedNetwork, invalidEntities }
     Al.WrongNetworkWithdrawal expectedNetwork invalidAccts ->
-        let invalidEntities = DiscriminatedRewardAccounts invalidAccts in
+        let invalidEntities = DiscriminatedRewardAccounts (toSet invalidAccts) in
         NetworkMismatch { expectedNetwork, invalidEntities }
     Al.OutputTooSmallUTxO outs ->
         let insufficientlyFundedOutputs =
                 (\out -> (TxOutInAnyEra (era, out), Nothing)) <$> outs
-         in InsufficientAdaInOutput { insufficientlyFundedOutputs }
+         in InsufficientAdaInOutput { insufficientlyFundedOutputs = toList insufficientlyFundedOutputs }
     Al.OutputBootAddrAttrsTooBig outs ->
         let culpritOutputs = (\out -> TxOutInAnyEra (era, out)) <$> outs in
-        BootstrapAddressAttributesTooLarge { culpritOutputs }
-    Al.TriesToForgeADA ->
-        MintingOrBurningAda
+        BootstrapAddressAttributesTooLarge { culpritOutputs = toList culpritOutputs }
+-- XXX: srk, removed?
+--    Al.TriesToForgeADA ->
+--        MintingOrBurningAda
     Al.UpdateFailure{} ->
         InvalidProtocolParametersUpdate

@@ -234,7 +234,7 @@ encodeUtxoFailure = \case
         let culpritOutputs = (\(_, _, out) -> TxOutInAnyEra (era, out)) <$> outs in
         ValueSizeAboveLimit (toList culpritOutputs)
     Cn.MaxTxSizeUTxO (Mismatch measuredSize maximumSize) ->
-        TransactionTooLarge 
+        TransactionTooLarge
           { measuredSize = fromIntegral measuredSize
           , maximumSize = fromIntegral maximumSize
           }

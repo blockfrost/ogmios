@@ -12,6 +12,13 @@ import Cardano.Ledger.Core
 import Control.State.Transition
     ( STS (..)
     )
+import Data.Map.NonEmpty
+    ( toMap
+    )
+import Data.Set.NonEmpty
+    ( toSet
+    )
+
 import Ogmios.Data.Ledger.PredicateFailure
     ( MultiEraPredicateFailure (..)
     , TxOutInAnyEra (..)
@@ -45,9 +52,9 @@ encodeUtxowFailure
     -> MultiEraPredicateFailure
 encodeUtxowFailure era encodeUtxosFailure = \case
     Ba.MalformedReferenceScripts scripts ->
-        MalformedScripts scripts
+        MalformedScripts (toSet scripts)
     Ba.MalformedScriptWitnesses scripts ->
-        MalformedScripts scripts
+        MalformedScripts (toSet scripts)
     Ba.AlonzoInBabbageUtxowPredFailure e ->
         Alonzo.encodeUtxowFailure era (encodeUtxoFailure era encodeUtxosFailure) e
     Ba.UtxoFailure e ->
@@ -73,4 +80,4 @@ encodeUtxoFailure era encodeUtxosFailure = \case
                     , Just minAda
                     )
                 ) <$> outs
-         in InsufficientAdaInOutput { insufficientlyFundedOutputs }
+         in InsufficientAdaInOutput { insufficientlyFundedOutputs = toList insufficientlyFundedOutputs }
