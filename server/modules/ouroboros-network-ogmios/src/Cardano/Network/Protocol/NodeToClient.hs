@@ -469,3 +469,4 @@ codecs epochSlots nodeToClientV =
         (let alonzo  = ShelleyCodecConfig in alonzo)
         (let babbage = ShelleyCodecConfig in babbage)
         (let conway  = ShelleyCodecConfig in conway)
+        (let dijkstra = ShelleyCodecConfig in dijkstra)
