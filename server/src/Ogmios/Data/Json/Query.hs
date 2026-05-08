@@ -23,7 +23,7 @@ module Ogmios.Data.Json.Query
     , Deposits
     , GenesisConfig
     , Interpreter
-    , Ledger.PoolParams
+    , Ledger.StakePoolParams
     , PoolRewardsInfo (..)
     , RewardAccountSummaries
     , RewardAccountSummary (..)
@@ -2481,7 +2481,7 @@ decodeSerializedTransaction
     :: forall crypto constraint.
         ( PraosCrypto crypto
         , TPraos.PraosCrypto crypto
-        , constraint ~ (MostRecentEra (CardanoBlock crypto) ~ ConwayEra)
+        , constraint ~ (MostRecentEra (CardanoBlock crypto) ~ DijkstraEra)
         , crypto ~ StandardCrypto
         )
     => Json.Value
@@ -2499,7 +2499,8 @@ decodeSerializedTransaction = Json.withText "Transaction" $ \(encodeUtf8 -> utf8
     --
     -- NOTE (2):
     -- Avoiding 'asum' here because it generates poor errors on failures.
-    pure $  deserialiseCBOR @BabbageEra GenTxBabbage bytes
+    pure $  deserialiseCBOR @DijkstraEra GenTxDijkstra bytes
+        <|> deserialiseCBOR @BabbageEra GenTxBabbage bytes
         <|> deserialiseCBOR @ConwayEra  GenTxConway  bytes
         <|> deserialiseCBOR @AlonzoEra  GenTxAlonzo  bytes
         <|> deserialiseCBOR @MaryEra    GenTxMary    bytes
