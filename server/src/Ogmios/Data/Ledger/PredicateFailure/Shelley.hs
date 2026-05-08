@@ -114,8 +114,6 @@ encodeDelegsFailure
 encodeDelegsFailure = \case
     Sh.DelegateeNotRegisteredDELEG poolId ->
         UnknownStakePool poolId
-    Sh.WithdrawalsNotInRewardsDELEGS withdrawals ->
-        IncompleteWithdrawals withdrawals
     Sh.DelplFailure e ->
         encodeDeplFailure e
 
