@@ -54,6 +54,7 @@ import Cardano.Ledger.Core
     ( EraTx (..)
     , EraTxBody (..)
     , eraName
+    , TopTx
     )
 import Control.Monad.Trans.Except
     ( Except
@@ -313,6 +314,7 @@ newExecutionUnitsEvaluator
         , crypto ~ StandardCrypto
         , CanEvaluateScriptsInEra BabbageEra
         , CanEvaluateScriptsInEra ConwayEra
+        , CanEvaluateScriptsInEra DijkstraEra
         , ConvertRawTxId (GenTx (CardanoBlock crypto))
         )
     => Logger TraceTxSubmission
@@ -482,7 +484,7 @@ newExecutionUnitsEvaluator tr = do
                -> SystemStart
                -> EpochInfo (Except PastHorizonException)
                -> UTxO era
-               -> Tx era
+               -> Tx TopTx era
                -> EvaluateTransactionResponse block
                )
             -> HoistQuery proto era
@@ -503,7 +505,7 @@ newExecutionUnitsEvaluator tr = do
             -> (  SystemStart
                -> EpochInfo (Except PastHorizonException)
                -> UTxO era
-               -> Tx era
+               -> Tx TopTx era
                -> EvaluateTransactionResponse block
                )
             -> HoistQuery proto era
@@ -520,7 +522,7 @@ newExecutionUnitsEvaluator tr = do
             => SomeEvaluationInAnyEra
             -> (  EpochInfo (Except PastHorizonException)
                -> UTxO era
-               -> Tx era
+               -> Tx TopTx era
                -> EvaluateTransactionResponse block
                )
             -> HoistQuery proto era
@@ -536,7 +538,7 @@ newExecutionUnitsEvaluator tr = do
             :: forall proto era. (CanEvaluateScriptsInEra era)
             => SomeEvaluationInAnyEra
             -> (  UTxO era
-               -> Tx era
+               -> Tx TopTx era
                -> EvaluateTransactionResponse block
                )
             -> HoistQuery proto era
@@ -601,7 +603,7 @@ data SomeEvaluationInAnyEra where
     SomeEvaluationInAnyEra
         :: forall era. (CanEvaluateScriptsInEra era)
         => !(UTxO era)
-        -> !(Tx era)
+        -> !(Tx TopTx era)
         -> SomeEvaluationInAnyEra
 
 -- | Return all unspent transaction outputs needed for evaluation. This includes
@@ -620,7 +622,7 @@ newEvaluateTransactionResponse
     :: forall era result.
         ( CanEvaluateScriptsInEra era
         )
-    => (UTxO era -> Tx era -> result)
+    => (UTxO era -> Tx TopTx era -> result)
     -> (EvaluateTransactionError -> result)
     -> UTxO era -- ^ Utxo fetched from the network
     -> SomeEvaluationInAnyEra -- ^ Tx & additional utxo
@@ -666,7 +668,7 @@ translateToNetworkEra
         ( CanEvaluateScriptsInEra eraNetwork
         )
     => SomeEvaluationInAnyEra
-    -> Maybe (UTxO eraNetwork, Tx eraNetwork)
+    -> Maybe (UTxO eraNetwork, Tx TopTx eraNetwork)
 translateToNetworkEra (SomeEvaluationInAnyEra utxoOrig txOrig) =
     translate utxoOrig txOrig
   where
@@ -675,14 +677,15 @@ translateToNetworkEra (SomeEvaluationInAnyEra utxoOrig txOrig) =
             ( CanEvaluateScriptsInEra eraArgs
             )
         => UTxO eraArgs
-        -> Tx eraArgs
-        -> Maybe (UTxO eraNetwork, Tx eraNetwork)
+        -> Tx TopTx eraArgs
+        -> Maybe (UTxO eraNetwork, Tx TopTx eraNetwork)
     translate utxo tx =
         let
-            eraNetwork = typeRep @eraNetwork
-            eraArgs    = typeRep @eraArgs
-            eraBabbage = typeRep @BabbageEra
-            eraConway  = typeRep @ConwayEra
+            eraNetwork  = typeRep @eraNetwork
+            eraArgs     = typeRep @eraArgs
+            eraBabbage  = typeRep @BabbageEra
+            eraConway   = typeRep @ConwayEra
+            eraDijkstra = typeRep @DijkstraEra
 
             sameEra =
                 case testEquality eraNetwork eraArgs of
@@ -692,7 +695,7 @@ translateToNetworkEra (SomeEvaluationInAnyEra utxoOrig txOrig) =
                         Nothing
 
             babbageToConway =
-                case (testEquality eraNetwork eraConway, testEquality eraArgs eraBabbage) of
+                case (testEquality eraNetwork eraDijkstra, testEquality eraArgs eraConway) of
                     (Just Refl, Just Refl) -> do
                         Just (upgrade utxo, upgrade tx)
                     _ ->

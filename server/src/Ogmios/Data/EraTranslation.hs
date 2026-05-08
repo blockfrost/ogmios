@@ -21,6 +21,7 @@ module Ogmios.Data.EraTranslation
 
 import Ogmios.Prelude
 
+import Cardano.Ledger.Api.Era
 import Cardano.Ledger.Babbage.Tx
     ( AlonzoTx (..)
     , isValidTxL
@@ -83,9 +84,9 @@ instance Upgrade BabbageTxOut ConwayEra where
     upgrade = force . Conway.upgradeTxOut
 
 -- XXX: srk sus&weird
-instance Upgrade BabbageTxOut DijkstraEra where
-    type Upgraded BabbageTxOut = BabbageTxOut
-    upgrade = force . Conway.upgradeTxOut
+--instance Upgrade BabbageTxOut DijkstraEra where
+--    type Upgraded BabbageTxOut = BabbageTxOut
+--    upgrade = force . Conway.upgradeTxOut
 
 ----------
 -- UTxO
@@ -96,29 +97,35 @@ instance Upgrade UTxO ConwayEra where
     upgrade = force . UTxO . fmap upgrade . unUTxO
 
 -- XXX: srk sus&weird
-instance Upgrade UTxO DijkstraEra where
-    type Upgraded UTxO = UTxO
-    upgrade = force . UTxO . fmap upgrade . unUTxO
+--instance Upgrade UTxO DijkstraEra where
+--    type Upgraded UTxO = UTxO
+--    upgrade = force . UTxO . fmap upgrade . unUTxO
 
 ----------
 -- Tx
 ----------
 
-instance Upgrade (AlonzoTx TopTx) ConwayEra where
-    type Upgraded (AlonzoTx TopTx) = Tx TopTx -- AlonzoTx TopTx
+instance Upgrade (AlonzoTx TopTx) DijkstraEra where
+    type Upgraded (AlonzoTx TopTx) = AlonzoTx TopTx
+    -- XXX: srk
+    upgrade tx = undefined
+    {--
     upgrade tx = force $ unsafeFromRight $ do
-        body <- left show $ runExcept $ binaryUpgradeTxBody (Alonzo.atBody tx)
+        body <- left show $ upgradeTxBody (Alonzo.atBody tx)
         left show $ runExcept $ do
             wits <- translateEraThroughCBOR "witness" $ Alonzo.atWits tx
+            --wits <- upgradeTxWits $ Alonzo.atWits tx
             auxiliaryData <- case Alonzo.atAuxData tx of
               SNothing -> pure SNothing
               SJust auxData -> SJust <$> translateEraThroughCBOR "auxiliaryData" auxData
             let isValid = Alonzo.atIsValid tx
             pure $
+              --AlonzoTx{}
               mkBasicTx body
                 & witsTxL .~ wits
                 & auxDataTxL .~ auxiliaryData
                 & isValidTxL .~ isValid
+              --}
 
 ----------
 -- GenTx

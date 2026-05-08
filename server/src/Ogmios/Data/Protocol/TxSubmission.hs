@@ -503,20 +503,20 @@ utxoFromMempool =
             UTxOInBabbageEra (UTxO (Map.union ul ur))
         (UTxOInBabbageEra (upgrade -> (UTxO ul)), UTxOInConwayEra (UTxO ur)) ->
             UTxOInConwayEra (UTxO (Map.union ul ur))
-        (UTxOInBabbageEra (upgrade . upgrade -> (UTxO ul)), UTxOInDijkstraEra (UTxO ur)) ->
-            UTxOInDijkstraEra (UTxO (Map.union ul ur))
+        --(UTxOInBabbageEra (upgrade . upgrade -> (UTxO ul)), UTxOInDijkstraEra (UTxO ur)) ->
+        --    UTxOInDijkstraEra (UTxO (Map.union ul ur))
 
         (UTxOInConwayEra (UTxO ul), UTxOInBabbageEra (upgrade -> (UTxO ur))) ->
             UTxOInConwayEra (UTxO (Map.union ul ur))
         (UTxOInConwayEra (UTxO ul), UTxOInConwayEra (UTxO ur)) ->
             UTxOInConwayEra (UTxO (Map.union ul ur))
-        (UTxOInConwayEra (upgrade -> (UTxO ul)), UTxOInDijkstraEra (UTxO ur)) ->
-            UTxOInDijkstraEra (UTxO (Map.union ul ur))
+        --(UTxOInConwayEra (upgrade -> (UTxO ul)), UTxOInDijkstraEra (UTxO ur)) ->
+        --    UTxOInDijkstraEra (UTxO (Map.union ul ur))
 
-        (UTxOInDijkstraEra (UTxO ul), UTxOInBabbageEra (upgrade . upgrade -> (UTxO ur))) ->
-            UTxOInDijkstraEra (UTxO (Map.union ul ur))
-        (UTxOInDijkstraEra (UTxO ul), UTxOInConwayEra (upgrade -> (UTxO ur))) ->
-            UTxOInDijkstraEra (UTxO (Map.union ul ur))
+        --(UTxOInDijkstraEra (UTxO ul), UTxOInBabbageEra (upgrade . upgrade -> (UTxO ur))) ->
+        --    UTxOInDijkstraEra (UTxO (Map.union ul ur))
+        --(UTxOInDijkstraEra (UTxO ul), UTxOInConwayEra (upgrade -> (UTxO ur))) ->
+        --    UTxOInDijkstraEra (UTxO (Map.union ul ur))
         (UTxOInDijkstraEra (UTxO ul), UTxOInDijkstraEra (UTxO ur)) ->
             UTxOInDijkstraEra (UTxO (Map.union ul ur))
 
@@ -580,20 +580,20 @@ mergeUtxo a b = case (a, b) of
         UTxOInBabbageEra $ UTxO (Map.union l r)
     (UTxOInBabbageEra (unUTxO -> l), UTxOInConwayEra (unUTxO -> r)) ->
         UTxOInConwayEra $ UTxO (Map.union (upgrade <$> l) r)
-    (UTxOInBabbageEra (unUTxO -> l), UTxOInDijkstraEra (unUTxO -> r)) ->
-        UTxOInDijkstraEra $ UTxO (Map.union (upgrade . upgrade <$> l) r)
+    --(UTxOInBabbageEra (unUTxO -> l), UTxOInDijkstraEra (unUTxO -> r)) ->
+    --    UTxOInDijkstraEra $ UTxO (Map.union (upgrade . upgrade <$> l) r)
 
     (UTxOInConwayEra (unUTxO -> l), UTxOInBabbageEra (unUTxO -> r)) ->
         UTxOInConwayEra $ UTxO (Map.union l (upgrade <$> r))
     (UTxOInConwayEra (unUTxO -> l), UTxOInConwayEra (unUTxO -> r)) ->
         UTxOInConwayEra $ UTxO (Map.union l r)
-    (UTxOInConwayEra (unUTxO -> l), UTxOInDijkstraEra (unUTxO -> r)) ->
-        UTxOInDijkstraEra $ UTxO (Map.union (upgrade <$> l) r)
+    --(UTxOInConwayEra (unUTxO -> l), UTxOInDijkstraEra (unUTxO -> r)) ->
+    --    UTxOInDijkstraEra $ UTxO (Map.union (upgrade <$> l) r)
 
-    (UTxOInDijkstraEra (unUTxO -> l), UTxOInBabbageEra (unUTxO -> r)) ->
-        UTxOInDijkstraEra $ UTxO (Map.union l (upgrade . upgrade <$> r))
-    (UTxOInDijkstraEra (unUTxO -> l), UTxOInConwayEra (unUTxO -> r)) ->
-        UTxOInDijkstraEra $ UTxO (Map.union l (upgrade <$> r))
+    --(UTxOInDijkstraEra (unUTxO -> l), UTxOInBabbageEra (unUTxO -> r)) ->
+    --    UTxOInDijkstraEra $ UTxO (Map.union l (upgrade . upgrade <$> r))
+    --(UTxOInDijkstraEra (unUTxO -> l), UTxOInConwayEra (unUTxO -> r)) ->
+    --    UTxOInDijkstraEra $ UTxO (Map.union l (upgrade <$> r))
     (UTxOInDijkstraEra (UTxO l), UTxOInDijkstraEra (UTxO r)) ->
         UTxOInDijkstraEra (UTxO (Map.union l r))
 
