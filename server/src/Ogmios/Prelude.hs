@@ -55,6 +55,7 @@ module Ogmios.Prelude
     , CardanoEras
     , CardanoBlock
     , ConwayEra
+    , DijkstraEra
     , Era
     , MaryEra
     , Praos
