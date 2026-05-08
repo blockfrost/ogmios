@@ -129,7 +129,7 @@ import Ouroboros.Network.Block
     , genesisPoint
     , getTipPoint
     )
-import Ouroboros.Network.NodeToClient
+import Cardano.Network.NodeToClient
     ( NodeToClientVersionData (NodeToClientVersionData)
     )
 import Ouroboros.Network.Protocol.ChainSync.ClientPipelined
@@ -155,7 +155,8 @@ import Ouroboros.Network.Protocol.LocalTxSubmission.Client
     )
 
 import Control.Monad.Class.MonadThrow
-    ( MonadMask
+    ( MonadEvaluate
+    , MonadMask
     )
 import qualified Data.Aeson as Json
 import qualified Data.Text as T
@@ -229,6 +230,7 @@ connectHealthCheckClient
     :: forall m env.
         ( MonadIO m -- Needed by 'connectClient'
         , MonadClock m
+        , MonadEvaluate m
         , MonadLog m
         , MonadMask m
         , MonadOuroboros m

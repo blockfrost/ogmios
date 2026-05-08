@@ -151,6 +151,7 @@ library
     , cardano-crypto-class
     , cardano-crypto-wrapper
     , cardano-data
+    , cardano-diffusion
     , cardano-ledger-allegra
     , cardano-ledger-alonzo
     , cardano-ledger-api
@@ -192,6 +193,7 @@ library
     , ouroboros-consensus:cardano
     , ouroboros-consensus:protocol
     , ouroboros-network:api
+    , ouroboros-network:framework
     , ouroboros-network-ogmios
     , ouroboros-network:protocols
     , plutus-core
