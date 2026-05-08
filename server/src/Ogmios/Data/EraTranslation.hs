@@ -82,11 +82,21 @@ instance Upgrade BabbageTxOut ConwayEra where
     type Upgraded BabbageTxOut = BabbageTxOut
     upgrade = force . Conway.upgradeTxOut
 
+-- XXX: srk sus&weird
+instance Upgrade BabbageTxOut DijkstraEra where
+    type Upgraded BabbageTxOut = BabbageTxOut
+    upgrade = force . Conway.upgradeTxOut
+
 ----------
 -- UTxO
 ----------
 
 instance Upgrade UTxO ConwayEra where
+    type Upgraded UTxO = UTxO
+    upgrade = force . UTxO . fmap upgrade . unUTxO
+
+-- XXX: srk sus&weird
+instance Upgrade UTxO DijkstraEra where
     type Upgraded UTxO = UTxO
     upgrade = force . UTxO . fmap upgrade . unUTxO
 
@@ -151,6 +161,10 @@ data MultiEraUTxO block where
 
     UTxOInConwayEra
         :: UTxO ConwayEra
+        -> MultiEraUTxO block
+
+    UTxOInDijkstraEra
+        :: UTxO DijkstraEra
         -> MultiEraUTxO block
 
 deriving instance
