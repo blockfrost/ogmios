@@ -23,14 +23,20 @@ import Ogmios.Prelude
 
 import Cardano.Ledger.Babbage.Tx
     ( AlonzoTx (..)
+    , isValidTxL
     )
 import Cardano.Ledger.Babbage.TxOut
     ( BabbageTxOut (..)
     )
 import Cardano.Ledger.Core
     ( PreviousEra
+    , Tx
+    , TopTx
     , translateEraThroughCBOR
-    , upgradeTxBody
+    , binaryUpgradeTxBody
+    , mkBasicTx
+    , auxDataTxL
+    , witsTxL
     )
 import Cardano.Ledger.Shelley.UTxO
     ( UTxO (..)
@@ -88,17 +94,21 @@ instance Upgrade UTxO ConwayEra where
 -- Tx
 ----------
 
-instance Upgrade AlonzoTx ConwayEra where
-    type Upgraded AlonzoTx = AlonzoTx
+instance Upgrade (AlonzoTx TopTx) ConwayEra where
+    type Upgraded (AlonzoTx TopTx) = Tx TopTx -- AlonzoTx TopTx
     upgrade tx = force $ unsafeFromRight $ do
-        body <- left show $ upgradeTxBody (Alonzo.body tx)
+        body <- left show $ runExcept $ binaryUpgradeTxBody (Alonzo.atBody tx)
         left show $ runExcept $ do
-            wits <- translateEraThroughCBOR "witness" $ Alonzo.wits tx
-            auxiliaryData <- case Alonzo.auxiliaryData tx of
+            wits <- translateEraThroughCBOR "witness" $ Alonzo.atWits tx
+            auxiliaryData <- case Alonzo.atAuxData tx of
               SNothing -> pure SNothing
               SJust auxData -> SJust <$> translateEraThroughCBOR "auxiliaryData" auxData
-            let isValid = Alonzo.isValid tx
-            pure $ AlonzoTx{body,wits,auxiliaryData,isValid}
+            let isValid = Alonzo.atIsValid tx
+            pure $
+              mkBasicTx body
+                & witsTxL .~ wits
+                & auxDataTxL .~ auxiliaryData
+                & isValidTxL .~ isValid
 
 ----------
 -- GenTx
@@ -122,7 +132,11 @@ upgradeGenTx = \case
     GenTxBabbage (ShelleyTx hash txBabbage) -> do
         txConway <- left show $ runExcept $ translateEraThroughCBOR @ConwayEra "BabbageTx" txBabbage
         pure $ GenTxConway $ ShelleyTx hash txConway
-    latest@(GenTxConway _)->
+    GenTxConway (ShelleyTx hash txConway) -> do
+        txDijkstra <- left show $ runExcept $ translateEraThroughCBOR @DijkstraEra "ConwayTx" txConway
+        pure $ GenTxDijkstra $ ShelleyTx hash txDijkstra
+
+    latest@(GenTxDijkstra _)->
         Right latest
 
 unsafeFromRight :: (HasCallStack) => Either Text a -> a
