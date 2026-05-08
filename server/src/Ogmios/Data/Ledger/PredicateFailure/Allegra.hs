@@ -6,9 +6,6 @@ module Ogmios.Data.Ledger.PredicateFailure.Allegra where
 
 import Ogmios.Prelude
 
-import Data.Map.NonEmpty
-    ( toMap
-    )
 import Data.Set.NonEmpty
     ( toSet
     )
@@ -38,6 +35,8 @@ encodeLedgerFailure = \case
         encodeUtxowFailure (encodeUtxoFailure ShelleyBasedEraAllegra) e
     Sh.DelegsFailure e ->
         encodeDelegsFailure e
+    Sh.ShelleyWithdrawalsMissingAccounts e -> error $ show e
+    Sh.ShelleyIncompleteWithdrawals e -> error $ show e
 
 encodeUtxoFailure
     :: forall era.
