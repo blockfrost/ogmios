@@ -12,7 +12,9 @@ module Ogmios.Data.Json.Shelley where
 
 import Ogmios.Data.Json.Prelude
 
-import Cardano.Ledger.Compactible (Compactible (fromCompact))
+import Cardano.Ledger.Compactible
+    ( Compactible (fromCompact)
+    )
 import Cardano.Ledger.Keys
     ( GenDelegPair (..)
     , KeyRole (..)
