@@ -129,6 +129,12 @@ import qualified Ogmios.Data.Ledger.PredicateFailure.Mary as Mary
 import qualified Ogmios.Data.Ledger.PredicateFailure.Shelley as Shelley
 
 
+import Cardano.Ledger.Allegra (ApplyTxError (AllegraApplyTxError))
+import Cardano.Ledger.Alonzo (ApplyTxError (AlonzoApplyTxError))
+import Cardano.Ledger.Babbage (ApplyTxError (BabbageApplyTxError))
+import Cardano.Ledger.Conway (ApplyTxError (ConwayApplyTxError))
+import Cardano.Ledger.Mary (ApplyTxError (MaryApplyTxError))
+import Cardano.Ledger.Shelley.API (ApplyTxError (ShelleyApplyTxError))
 --
 -- Encoders
 --
@@ -182,22 +188,22 @@ encodeSubmitTransactionError reject = \case
             \submit a transaction near an era boundary (i.e. at the moment of a hard-fork). \
             \Retrying should help."
             (pure $ encodeEraMismatch e)
-    ApplyTxErrConway (ApplyTxError xs) ->
+    ApplyTxErrConway (ConwayApplyTxError xs) ->
         (encodePredicateFailure reject . pickPredicateFailure)
             (Conway.encodeLedgerFailure <$> xs)
-    ApplyTxErrBabbage (ApplyTxError xs) ->
+    ApplyTxErrBabbage (BabbageApplyTxError xs) ->
         (encodePredicateFailure reject . pickPredicateFailure)
             (Babbage.encodeLedgerFailure <$> xs)
-    ApplyTxErrAlonzo (ApplyTxError xs) ->
+    ApplyTxErrAlonzo (AlonzoApplyTxError xs) ->
         (encodePredicateFailure reject . pickPredicateFailure)
             (Alonzo.encodeLedgerFailure <$> xs)
-    ApplyTxErrMary (ApplyTxError xs) ->
+    ApplyTxErrMary (MaryApplyTxError xs) ->
         (encodePredicateFailure reject . pickPredicateFailure)
             (Mary.encodeLedgerFailure <$> xs)
-    ApplyTxErrAllegra (ApplyTxError xs) ->
+    ApplyTxErrAllegra (AllegraApplyTxError xs) ->
         (encodePredicateFailure reject . pickPredicateFailure)
             (Allegra.encodeLedgerFailure <$> xs)
-    ApplyTxErrShelley (ApplyTxError xs) ->
+    ApplyTxErrShelley (ShelleyApplyTxError xs) ->
         (encodePredicateFailure reject . pickPredicateFailure)
             (Shelley.encodeLedgerFailure <$> xs)
     ApplyTxErrByron{} ->

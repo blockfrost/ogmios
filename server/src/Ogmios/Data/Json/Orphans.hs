@@ -75,10 +75,11 @@ instance ToJSON (Tip (CardanoBlock crypto)) where
     toJSON = inefficientEncodingToValue . encodeTip
     toEncoding = encodeTip
 
+-- XXX: srk, overlapping now
 -- Only used for logging & health
-instance ToJSON (Point (CardanoBlock crypto)) where
-    toJSON = inefficientEncodingToValue . encodePoint
-    toEncoding = encodePoint
+-- instance ToJSON (Point (CardanoBlock crypto)) where
+--     toJSON = inefficientEncodingToValue . encodePoint
+--     toEncoding = encodePoint
 
 --
 -- FromJSON
@@ -91,8 +92,9 @@ instance FromJSON (MultiEraDecoder (GenTx (CardanoBlock StandardCrypto))) where
 instance FromJSON (MultiEraUTxO (CardanoBlock crypto)) where
     parseJSON = decodeUtxo
 
-instance FromJSON (Point (CardanoBlock crypto)) where
-    parseJSON = decodePoint
+-- XXX: srk, overlapping now
+-- instance FromJSON (Point (CardanoBlock crypto)) where
+--     parseJSON = decodePoint
 
 instance FromJSON (Tip (CardanoBlock crypto)) where
     parseJSON = decodeTip
