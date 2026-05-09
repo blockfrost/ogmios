@@ -116,6 +116,7 @@ encodeTimelock = encodeObject . \case
     Al.RequireTimeStart s ->
         "clause" .= encodeText "after" <>
         "slot" .= encodeSlotNo s
+    _ -> error "Impossible: All NativeScripts should have been accounted for"
 
 encodeTx
     :: (MetadataFormat, IncludeCbor)

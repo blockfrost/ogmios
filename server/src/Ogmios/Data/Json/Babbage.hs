@@ -32,10 +32,8 @@ import qualified Data.Map.Strict as Map
 import qualified Ouroboros.Consensus.Protocol.Praos.Header as Praos
 
 import qualified Cardano.Ledger.Api as Ledger
-import qualified Cardano.Ledger.Address as Ledger
 import qualified Cardano.Ledger.Block as Ledger
 import qualified Cardano.Ledger.Core as Ledger
-import qualified Cardano.Ledger.Plutus.Data as Ledger
 
 import qualified Cardano.Ledger.Shelley.API as Sh
 import qualified Cardano.Ledger.Shelley.PParams as Sh

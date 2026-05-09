@@ -17,7 +17,7 @@ module Ogmios.Data.Json.Query
     , AdHocQuery (..)
 
       -- ** Types in queries
-    , AccountState (..)
+    , ChainAccountState (..)
     , DRepSummary (..)
     , Delegations
     , Deposits
@@ -155,7 +155,7 @@ import Cardano.Ledger.Shelley.Genesis
     ( ShelleyGenesis
     )
 import Cardano.Ledger.Shelley.LedgerState
-    ( AccountState (..)
+    ( ChainAccountState (..)
     )
 import Cardano.Ledger.Shelley.Rewards
     ( StakeShare (..)

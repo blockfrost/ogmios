@@ -6,14 +6,14 @@ module Ogmios.Data.Ledger.PredicateFailure.Babbage where
 
 import Ogmios.Prelude
 
+import Cardano.Ledger.BaseTypes
+    ( Mismatch (..)
+    )
 import Cardano.Ledger.Core
     ( EraRule
     )
 import Control.State.Transition
     ( STS (..)
-    )
-import Data.Map.NonEmpty
-    ( toMap
     )
 import Data.Set.NonEmpty
     ( toSet
@@ -40,6 +40,9 @@ encodeLedgerFailure = \case
         encodeUtxowFailure AlonzoBasedEraBabbage (Alonzo.encodeUtxosFailure AlonzoBasedEraBabbage) e
     Sh.DelegsFailure e ->
         encodeDelegsFailure e
+    -- XXX: srk upgrade
+    Sh.ShelleyWithdrawalsMissingAccounts e -> error $ show e
+    Sh.ShelleyIncompleteWithdrawals e -> error $ show e
 
 encodeUtxowFailure
     :: forall era.
@@ -55,6 +58,8 @@ encodeUtxowFailure era encodeUtxosFailure = \case
         MalformedScripts (toSet scripts)
     Ba.MalformedScriptWitnesses scripts ->
         MalformedScripts (toSet scripts)
+    Ba.ScriptIntegrityHashMismatch (Mismatch providedIntegrityHash computedIntegrityHash) _expectedScriptIntegrity ->
+        ScriptIntegrityHashMismatch { providedIntegrityHash, computedIntegrityHash }
     Ba.AlonzoInBabbageUtxowPredFailure e ->
         Alonzo.encodeUtxowFailure era (encodeUtxoFailure era encodeUtxosFailure) e
     Ba.UtxoFailure e ->

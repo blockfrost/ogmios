@@ -33,7 +33,6 @@ import qualified Cardano.Protocol.TPraos.BHeader as TPraos
 import qualified Cardano.Ledger.Api as Ledger
 import qualified Cardano.Ledger.Block as Ledger
 import qualified Cardano.Ledger.Core as Ledger
-import qualified Cardano.Ledger.Plutus.Language as Ledger
 
 import qualified Cardano.Ledger.Shelley.API as Sh
 import qualified Cardano.Ledger.Shelley.PParams as Sh
@@ -604,3 +603,4 @@ stringifyLanguage = \case
     Ledger.PlutusV1 -> "plutus:v1"
     Ledger.PlutusV2 -> "plutus:v2"
     Ledger.PlutusV3 -> "plutus:v3"
+    Ledger.PlutusV4 -> "plutus:v4"

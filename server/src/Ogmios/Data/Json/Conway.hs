@@ -43,6 +43,7 @@ import Ouroboros.Consensus.Shelley.Protocol.Praos
     ()
 
 import qualified Data.Map as Map
+import qualified Data.Text
 
 import qualified Cardano.Ledger.Api as Ledger
 import qualified Cardano.Ledger.Block as Ledger
@@ -57,12 +58,10 @@ import qualified Cardano.Ledger.Alonzo.BlockBody as Al
 import qualified Cardano.Ledger.Alonzo.PParams as Al
 
 import qualified Cardano.Ledger.Babbage.Core as Ba
-import qualified Cardano.Ledger.Babbage.Tx as Ba
 
 import qualified Cardano.Ledger.Conway.Genesis as Cn
 import qualified Cardano.Ledger.Conway.Governance as Cn
 import qualified Cardano.Ledger.Conway.PParams as Cn
-import qualified Cardano.Ledger.Conway.Tx as Cn
 import qualified Cardano.Ledger.Conway.TxBody as Cn
 import qualified Cardano.Ledger.Conway.TxCert as Cn
 
@@ -240,6 +239,9 @@ encodeContextError err = encodeText $ case err of
         "Uncomputable slot arithmetic; transaction's validity bounds go beyond the foreseeable end of the current era: " <> e
     Cn.BabbageContextError (Ba.AlonzoContextError (Al.TranslationLogicMissingInput i)) ->
         "Unknown transaction input (missing from UTxO set): " <> Shelley.stringifyTxIn i
+    Cn.ReferenceInputsNotDisjointFromInputs common ->
+        "Reference inputs not disjoin from inputs, common inputs: (" <> Data.Text.unwords (map Shelley.stringifyTxIn $ toList common) <> ")"
+
 
 encodeConstitution
     :: Cn.Constitution era
@@ -250,7 +252,7 @@ encodeConstitution x =
     "guardrails" .=
         encodeStrictMaybe
             (\s -> encodeObject ("hash" .= Shelley.encodeScriptHash s))
-            (x ^. Cn.constitutionScriptL)
+            (x ^. Cn.constitutionGuardrailsScriptHashL)
 
 encodeConstitutionalCommitteeMember
     :: Ledger.Credential ColdCommitteeRole
@@ -541,9 +543,9 @@ encodePParamsHKD
     -> Json
 encodePParamsHKD encode pure_ x =
     encode "minFeeCoefficient"
-        (encodeInteger . unCoin) (unTHKD (Cn.cppMinFeeA x)) <>
+        (encodeInteger . unCoin . fromCompact . Ledger.unCoinPerByte) (unTHKD (Cn.cppTxFeePerByte x)) <>
     encode "minFeeConstant"
-        encodeCoin (unTHKD (Cn.cppMinFeeB x)) <>
+        (encodeCoin . fromCompact) (unTHKD (Cn.cppTxFeeFixed x)) <>
     encode "minFeeReferenceScripts"
         (\(base :: NonNegativeInterval) -> encodeObject
             -- NOTE: This will very likely always be an integer. The ledger
