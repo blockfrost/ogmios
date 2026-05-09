@@ -350,11 +350,13 @@ test-suite unit
     , base >=4.7 && <5
     , bytestring
     , cardano-crypto-class
+    , cardano-ledger-allegra
     , cardano-ledger-alonzo
     , cardano-ledger-alonzo:testlib
     , cardano-ledger-api
     , cardano-ledger-babbage
     , cardano-ledger-binary
+    , cardano-ledger-conway
     , cardano-ledger-conway:testlib
     , cardano-ledger-core
     , cardano-ledger-mary
@@ -375,6 +377,7 @@ test-suite unit
     , ouroboros-consensus:cardano
     , ouroboros-consensus:unstable-cardano-testlib
     , ouroboros-network:api
+    , ouroboros-network:framework
     , ouroboros-network-ogmios
     , ouroboros-network:protocols
     , random
