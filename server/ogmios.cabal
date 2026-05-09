@@ -376,6 +376,7 @@ test-suite unit
     , ouroboros-consensus:unstable-cardano-testlib
     , ouroboros-network-ogmios
     , ouroboros-network:api
+    , ouroboros-network:framework
     , ouroboros-network:protocols
     , random
     , strict-sop-core

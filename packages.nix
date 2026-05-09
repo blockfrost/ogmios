@@ -45,4 +45,5 @@ let
 in {
   default = ogmios-project.ogmios.components.exes.ogmios;
   inherit (pkgs) libblst;
+  unit-test = ogmios-project.ogmios.components.tests.unit;
 }
