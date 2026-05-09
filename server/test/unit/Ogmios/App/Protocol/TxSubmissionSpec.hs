@@ -55,9 +55,10 @@ import Test.QuickCheck
     , (==>)
     )
 
+import Cardano.Ledger.Core (TopTx)
 import qualified Data.Map as Map
 
-type Tx' = Tx BabbageEra
+type Tx' = Tx TopTx BabbageEra
 type TxOut' = BabbageTxOut BabbageEra
 
 spec :: Spec

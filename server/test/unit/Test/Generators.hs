@@ -22,7 +22,7 @@ import Cardano.Ledger.Coin
     ( Coin (..)
     )
 import Cardano.Ledger.Core
-    ( EraSegWits (..)
+    ( EraBlockBody (..)
     )
 import Cardano.Ledger.Keys
     ( KeyRole (..)
@@ -60,11 +60,11 @@ import Data.Type.Equality
     , (:~:) (..)
     )
 import Ogmios.Data.Json.Query
-    ( AccountState (..)
+    ( ChainAccountState (..)
     , DRepSummary (..)
     , GenesisConfig
     , Interpreter
-    , PoolParams
+    , StakePoolParams
     , PoolRewardsInfo (..)
     , QueryResult
     , RewardAccountSummaries
@@ -180,6 +180,14 @@ import qualified Cardano.Ledger.Shelley.API.Wallet as Sh.Api
 import qualified Cardano.Ledger.Shelley.UTxO as Sh
 import qualified Cardano.Ledger.TxIn as Ledger
 
+import Cardano.Ledger.Allegra (ApplyTxError (AllegraApplyTxError))
+import Cardano.Ledger.Alonzo (ApplyTxError (AlonzoApplyTxError))
+import Cardano.Ledger.Babbage (ApplyTxError (BabbageApplyTxError))
+import Cardano.Ledger.Conway (ApplyTxError (ConwayApplyTxError))
+import Cardano.Ledger.Mary (ApplyTxError (MaryApplyTxError))
+import Cardano.Ledger.Shelley.API (ApplyTxError (ShelleyApplyTxError))
+
+
 -- FIXME
 -- Needed with ouroboros-cardano-consensus==0.18.0.0. Otherwise, use the following:
 import qualified Ouroboros.Consensus.Shelley.Ledger.Query.Types as Consensus
@@ -197,8 +205,9 @@ genBlock = oneof
   where
     genTPraosBlockFrom
         :: forall era.
-            ( Arbitrary (Ledger.Tx era)
-            , EraSegWits era
+            ( Arbitrary (Ledger.Tx Ledger.TopTx era)
+            , Arbitrary (BlockBody era)
+            , EraBlockBody era
             )
         => Gen (ShelleyBlock (TPraos StandardCrypto) era)
     genTPraosBlockFrom =
@@ -207,21 +216,22 @@ genBlock = oneof
               , ShelleyBlock
                   <$> (Ledger.Block
                         <$> arbitrary
-                        <*> (toTxSeq @era <$> arbitrary `suchThat` (not . null))
+                        <*> arbitrary -- ((\x -> x ^. txSeqBlockBodyL @era) <$> arbitrary `suchThat` (not . null))
                       )
                   <*> arbitrary
               )
             , (1
               , ShelleyBlock
-                  <$> (Ledger.Block <$> arbitrary <*> pure (toTxSeq @era mempty))
+                  <$> arbitrary -- (Ledger.Block <$> arbitrary <*> pure (mempty ^. txSeqBlockBodyL @era))
                   <*> arbitrary
               )
             ]
 
     genPraosBlockFrom
         :: forall era.
-            ( Arbitrary (Ledger.Tx era)
-            , EraSegWits era
+            ( Arbitrary (Ledger.Tx Ledger.TopTx era)
+            , Arbitrary (BlockBody era)
+            , EraBlockBody era
             )
         => Gen (ShelleyBlock (Praos StandardCrypto) era)
     genPraosBlockFrom =
@@ -230,15 +240,17 @@ genBlock = oneof
               , ShelleyBlock
                   <$> (Ledger.Block
                         <$> arbitrary
-                        <*> (toTxSeq @era <$> arbitrary `suchThat` (not . null))
+                        <*> arbitrary --(txSeqBlockBodyL @era <$> arbitrary `suchThat` (not . null))
                       )
                   <*> arbitrary
               )
+            {--
             , (1
               , ShelleyBlock
-                  <$> (Ledger.Block <$> arbitrary <*> pure (toTxSeq @era mempty))
+                  <$> arbitrary -- (Ledger.Block <$> arbitrary <*> pure (txSeqBlockBodyL @era mempty))
                   <*> arbitrary
               )
+            --}
             ]
 
 genTxId :: Gen Ledger.TxId
@@ -303,12 +315,12 @@ genSubmitResult = frequency
 genHardForkApplyTxErr :: Gen (HardForkApplyTxErr (CardanoEras StandardCrypto))
 genHardForkApplyTxErr = frequency
     [ ( 1, HardForkApplyTxErrWrongEra <$> genMismatchEraInfo)
-    , ( 5, ApplyTxErrShelley . ApplyTxError . pure <$> arbitrary )
-    , ( 5, ApplyTxErrAllegra . ApplyTxError . pure <$> arbitrary )
-    , ( 5, ApplyTxErrMary . ApplyTxError . pure <$> arbitrary )
-    , ( 10, ApplyTxErrAlonzo . ApplyTxError . pure <$> arbitrary )
-    , ( 25, ApplyTxErrBabbage . ApplyTxError . pure <$> arbitrary )
-    , ( 25, ApplyTxErrConway . ApplyTxError . pure <$> arbitrary )
+    , ( 5, ApplyTxErrShelley . ShelleyApplyTxError . pure <$> arbitrary )
+    , ( 5, ApplyTxErrAllegra . AllegraApplyTxError . pure <$> arbitrary )
+    , ( 5, ApplyTxErrMary . MaryApplyTxError . pure <$> arbitrary )
+    , ( 10, ApplyTxErrAlonzo . AlonzoApplyTxError . pure <$> arbitrary )
+    , ( 25, ApplyTxErrBabbage . BabbageApplyTxError . pure <$> arbitrary )
+    , ( 25, ApplyTxErrConway . ConwayApplyTxError . pure <$> arbitrary )
     ]
 
 genEvaluateTransactionResponse :: Gen (EvaluateTransactionResponse Block)
@@ -875,6 +887,7 @@ genGenesisConfigAlonzo =
         <*> arbitrary
         <*> arbitrary
         <*> arbitrary
+        <*> arbitrary
 
 genGenesisConfigConway
     :: Gen (GenesisConfig ConwayEra)
@@ -901,19 +914,19 @@ genStakePoolsPerformancesResult _ = frequency
 
 genAccountStateResult
     :: forall crypto. (crypto ~ StandardCrypto)
-    => Proxy (QueryResult crypto AccountState)
-    -> Gen (QueryResult crypto AccountState)
+    => Proxy (QueryResult crypto ChainAccountState)
+    -> Gen (QueryResult crypto ChainAccountState)
 genAccountStateResult _ = frequency
     [ (1, Left <$> genMismatchEraInfo)
     , (10, Right <$> genAccountState)
     ]
   where
-    genAccountState = AccountState <$> arbitrary <*> arbitrary
+    genAccountState = ChainAccountState <$> arbitrary <*> arbitrary
 
 genPoolParametersResult
     :: forall crypto. (crypto ~ StandardCrypto)
-    => Proxy (QueryResult crypto (Map (Ledger.KeyHash 'StakePool) (Maybe PoolParams, StrictMaybe Coin)))
-    -> Gen (QueryResult crypto (Map (Ledger.KeyHash 'StakePool) (Maybe PoolParams, StrictMaybe Coin)))
+    => Proxy (QueryResult crypto (Map (Ledger.KeyHash StakePool) (Maybe StakePoolParams, StrictMaybe Coin)))
+    -> Gen (QueryResult crypto (Map (Ledger.KeyHash StakePool) (Maybe StakePoolParams, StrictMaybe Coin)))
 genPoolParametersResult _ = frequency
     [ (1, Left <$> genMismatchEraInfo)
     , (10, Right <$> arbitrary)
@@ -921,8 +934,8 @@ genPoolParametersResult _ = frequency
 
 genPoolParametersResultNoStake
     :: forall crypto. (crypto ~ StandardCrypto)
-    => Proxy (QueryResult crypto (Map (Ledger.KeyHash 'StakePool) PoolParams))
-    -> Gen (QueryResult crypto (Map (Ledger.KeyHash 'StakePool) PoolParams))
+    => Proxy (QueryResult crypto (Map (Ledger.KeyHash StakePool) StakePoolParams))
+    -> Gen (QueryResult crypto (Map (Ledger.KeyHash StakePool) StakePoolParams))
 genPoolParametersResultNoStake _ = frequency
     [ (1, Left <$> genMismatchEraInfo)
     , (10, Right <$> arbitrary)

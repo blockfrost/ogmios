@@ -9,9 +9,6 @@ module Test.Generators.Orphans () where
 
 import Ogmios.Prelude
 
-import Cardano.Ledger.Alonzo.Core
-    ( AlonzoEraScript (..)
-    )
 import Ogmios.Data.Json.Query
     ( RewardAccountSummary (..)
     )
@@ -27,8 +24,8 @@ import Test.QuickCheck.Arbitrary.Generic
     ( genericArbitrary
     )
 
-import qualified Cardano.Ledger.Alonzo.Core as Ledger
 import qualified Cardano.Ledger.Alonzo.Scripts as Ledger
+import qualified Cardano.Ledger.Alonzo.Plutus.Context as Ledger
 import qualified Test.Cardano.Ledger.Alonzo.Arbitrary as Ledger
 
 import Test.Cardano.Ledger.Conway.Arbitrary
@@ -44,10 +41,7 @@ instance Arbitrary ScriptPurposeIndexInAnyEra where
 instance Arbitrary RewardAccountSummary where
     arbitrary = genericArbitrary
 
-instance (AlonzoEraScript era, Ledger.Script era ~ Ledger.AlonzoScript era) => Arbitrary (Ledger.PlutusScript era) where
+instance Ledger.EraPlutusContext era => Arbitrary (Ledger.PlutusScript era) where
   arbitrary = do
-    lang <- elements [minBound .. eraMaxLanguage @era]
-    script <- Ledger.genPlutusScript lang
-    case script of
-      Ledger.TimelockScript{} -> error "impossible"
-      Ledger.PlutusScript s -> pure s
+    lang <- elements $ toList (Ledger.supportedLanguages @era)
+    Ledger.genPlutusScript lang

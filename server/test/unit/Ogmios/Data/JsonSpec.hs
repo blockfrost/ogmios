@@ -1001,8 +1001,8 @@ instance Arbitrary (Point Block) where
 instance Arbitrary (Tip Block) where
     arbitrary = genTip
 
-instance Arbitrary Block where
-    arbitrary = reasonablySized genBlock
+--instance Arbitrary Block where
+--    arbitrary = reasonablySized genBlock
 
 instance Arbitrary (GenTx Block) where
     arbitrary = genTx

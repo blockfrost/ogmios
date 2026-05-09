@@ -9,6 +9,7 @@ module Ogmios.App.Protocol.ChainSyncSpec
     ) where
 
 import Ogmios.Prelude
+import Control.Monad.Class.MonadThrow (MonadEvaluate)
 
 import Cardano.Network.Protocol.NodeToClient
     ( Block
@@ -22,7 +23,8 @@ import Data.Aeson
     ( ToJSON (..)
     )
 import Network.TypedProtocol.Codec
-    ( Codec (..)
+    ( Codec
+    , CodecF (..)
     , SomeMessage (..)
     , runDecoder
     )
@@ -202,7 +204,7 @@ maxInFlight :: MaxInFlight
 maxInFlight = 3
 
 withChainSyncClient
-    :: (MonadOuroboros m)
+    :: (MonadEvaluate m, MonadOuroboros m)
     => ((ChainSyncMessage Block -> m ()) ->  m Json -> m a)
     -> StdGen
     -> m a

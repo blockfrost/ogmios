@@ -10,6 +10,7 @@ module Ogmios.App.Protocol.TxMonitorSpec
     ) where
 
 import Ogmios.Prelude
+import Control.Monad.Class.MonadThrow (MonadEvaluate)
 
 import Cardano.Network.Protocol.NodeToClient
     ( Block
@@ -27,7 +28,8 @@ import Data.List
     , (!!)
     )
 import Network.TypedProtocol.Codec
-    ( Codec (..)
+    ( Codec
+    , CodecF (..)
     , SomeMessage (..)
     , runDecoder
     )
@@ -212,9 +214,10 @@ spec = parallel $ do
             expectRpcResponse isMustAcquireFirst receive (toJSON mirror)
 
 type Protocol = LocalTxMonitor (GenTxId Block) (GenTx Block) SlotNo
+-- Codec (LocalTxMonitor (GenTxId blk) (GenTx blk) SlotNo) e m bTM
 
 withTxMonitorClient
-    :: (MonadCatch m, MonadOuroboros m)
+    :: (MonadCatch m, MonadEvaluate m, MonadOuroboros m)
     => ((TxMonitorMessage Block -> m ()) ->  m Json -> m a)
     -> StdGen
     -> m a
@@ -233,6 +236,7 @@ withTxMonitorClient action seed = do
             Right a -> pure a
   where
     defaultSlotsPerEpoch = EpochSlots 432000
+
 
 txMonitorMockPeer
     :: forall m failure. (MonadSTM m, MonadThrow m, Show failure)
@@ -385,12 +389,13 @@ plausibleTxsIds :: [Ledger.TxId]
 plausibleTxsIds = unGenTxId . txId <$> plausibleTxs
   where
     unGenTxId = \case
-        GenTxIdConway (ShelleyTxId x)  -> x
-        GenTxIdBabbage (ShelleyTxId x) -> x
-        GenTxIdAlonzo (ShelleyTxId x)  -> x
-        GenTxIdMary (ShelleyTxId x)    -> x
-        GenTxIdAllegra (ShelleyTxId x) -> x
-        GenTxIdShelley (ShelleyTxId x) -> x
+        GenTxIdDijkstra (ShelleyTxId x) -> x
+        GenTxIdConway (ShelleyTxId x)   -> x
+        GenTxIdBabbage (ShelleyTxId x)  -> x
+        GenTxIdAlonzo (ShelleyTxId x)   -> x
+        GenTxIdMary (ShelleyTxId x)     -> x
+        GenTxIdAllegra (ShelleyTxId x)  -> x
+        GenTxIdShelley (ShelleyTxId x)  -> x
         GenTxIdByron _ -> error "GenTxIdByron"
 
 genServerAction :: [tx] -> Gen ServerAction
